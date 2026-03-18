@@ -6,7 +6,7 @@
       "id": "showbox",
       "name": "ShowBox",
       "description": "ShowBox streaming with the best quality and up to 4K",
-      "version": "2.3.7",
+      "version": "1.0",
       "author": "Nuvio Team",
       "supportedTypes": [
         "movie",
@@ -28,7 +28,7 @@
       "id": "vidlink",
       "name": "VidLink",
       "description": "Vidlink streaming with fast load times and good quality",
-      "version": "1.5.8",
+      "version": "1.0",
       "author": "Nuvio Team",
       "supportedTypes": [
         "movie",
@@ -49,7 +49,7 @@
       "id": "animekai",
       "name": "AnimeKai",
       "description": "Best plugin for streaming anime with fast load times and up to 1080p",
-      "version": "2.1.0",
+      "version": "1.1",
       "author": "Nuvio Team",
       "supportedTypes": [
        "movie",
