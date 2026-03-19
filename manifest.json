@@ -46,6 +46,26 @@
       ]
     },
     {
+      "id": "uhdmovies",
+      "name": "UHDMovies",
+      "description": "UHD Movies streaming with multiple resolutions",
+      "version": "1.2",
+      "author": "Nuvio Team",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/uhdmovies.js",
+      "enabled": true,
+      "formats": [
+        "mkv"
+      ],
+      "logo": "https://uhdmovies.ink/wp-content/uploads/2021/03/cropped-output-onlinepngtools-1-180x180.png",
+      "contentLanguage": [
+        "en"
+      ]
+    },
+    {
       "id": "animekai",
       "name": "AnimeKai",
       "description": "AnimeKai streaming with fast load times, up to 1080p playback, and multi-server support",
