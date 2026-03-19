@@ -103,13 +103,31 @@ function formatFileSize(sizeStr) {
     return sizeStr;
 }
 
-// Extract filename from a URL (strips path and query string)
+// Known video file extensions
+const VIDEO_EXTENSIONS = ['.mkv', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.ts', '.m2ts'];
+
+// Extract a real media filename from a URL by scanning all path segments
 function getFilenameFromUrl(url) {
     try {
-        const pathname = url.split('?')[0]; // remove query string
-        const parts = pathname.split('/');
-        const filename = parts[parts.length - 1];
-        return decodeURIComponent(filename) || null;
+        // Strip query string and hash
+        const cleanUrl = url.split('?')[0].split('#')[0];
+        // Decode percent-encoded characters
+        const decoded = decodeURIComponent(cleanUrl);
+        // Split into path segments
+        const segments = decoded.split('/');
+        
+        // Scan segments from the end, looking for one with a video extension
+        for (let i = segments.length - 1; i >= 0; i--) {
+            const segment = segments[i];
+            if (!segment) continue;
+            const lower = segment.toLowerCase();
+            if (VIDEO_EXTENSIONS.some(ext => lower.endsWith(ext))) {
+                return segment; // Return the raw filename including extension
+            }
+        }
+        
+        // No video extension found — return null so we fall back to TMDB title
+        return null;
     } catch (e) {
         return null;
     }
@@ -177,6 +195,12 @@ function processShowBoxResponse(data, mediaInfo, mediaType, seasonNum, episodeNu
 
         console.log(`[ShowBox] Processing ${data.versions.length} version(s)`);
 
+        // Build fallback title from TMDB data in case URL has no filename
+        let fallbackTitle = mediaInfo.title || 'Unknown Title';
+        if (mediaType === 'tv' && seasonNum && episodeNum) {
+            fallbackTitle = `${mediaInfo.title || 'Unknown'} S${String(seasonNum).padStart(2, '0')}E${String(episodeNum).padStart(2, '0')}`;
+        }
+
         // Process each version
         data.versions.forEach(function(version, versionIndex) {
             const versionName = version.name || `Version ${versionIndex + 1}`;
@@ -190,8 +214,11 @@ function processShowBoxResponse(data, mediaInfo, mediaType, seasonNum, episodeNu
                     const normalizedQuality = getQualityFromName(link.quality || 'Unknown');
                     const linkSize = link.size || versionSize;
 
-                    // Use link name from API, fall back to version name, then filename from URL
-                    const streamTitle = link.name || versionName || getFilenameFromUrl(link.url) || 'Unknown Title';
+                    // Try to get a real filename from the URL, fall back to TMDB title
+                    const filenameFromUrl = getFilenameFromUrl(link.url);
+                    const streamTitle = filenameFromUrl || fallbackTitle;
+
+                    console.log(`[ShowBox] Stream title: "${streamTitle}" (${filenameFromUrl ? 'from URL' : 'from TMDB'})`);
 
                     // Create stream name - use version number if multiple versions exist
                     let streamName = 'ShowBox';
