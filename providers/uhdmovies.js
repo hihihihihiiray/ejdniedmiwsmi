@@ -6,7 +6,7 @@
 
 var cheerio = require("cheerio-without-node-native");
 
-var DOMAIN = "https://uhdmovies.rip";
+var DOMAIN = "https://uhdmovies.ink";
 var DOMAINS_URL = "https://raw.githubusercontent.com/phisher98/TVVVV/refs/heads/main/domains.json";
 var DOMAIN_CACHE = { url: DOMAIN, ts: 0 };
 
@@ -25,7 +25,7 @@ function getLatestDomain() {
     .catch(() => DOMAIN_CACHE.url);
 }
 var TMDB_API = "https://api.themoviedb.org/3";
-var TMDB_API_KEY = "1865f43a0549ca50d341dd9ab8b29f49";
+var TMDB_API_KEY = "1c29a5198ee1854bd5eb45dbe8d17d92";
 var USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 // ============ UTILITY FUNCTIONS ============
