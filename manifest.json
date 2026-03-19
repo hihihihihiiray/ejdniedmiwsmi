@@ -25,6 +25,26 @@
       ]
     },
     {
+      "id": "4khdhub",
+      "name": "4KHDHub",
+      "description": "Direct links up to 4K",
+      "version": "1.0.2",
+      "author": "Nuvio Team",
+      "supportedTypes": [
+        "movie",
+        "tv"
+      ],
+      "filename": "providers/4khdhub.js",
+      "enabled": true,
+      "formats": [
+        "mkv"
+      ],
+      "logo": "https://4khdhub.fans/favicon.ico",
+      "contentLanguage": [
+        "en"
+      ]
+    },
+    {
       "id": "vidlink",
       "name": "VidLink",
       "description": "Vidlink streaming with fast load times and good quality",
