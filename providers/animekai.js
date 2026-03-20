@@ -429,7 +429,7 @@ function formatToNuvioStreams(formattedData, mediaTitle) {
         var serverLabel = s.serverName || 'Server';
         
         // Name format: ⌜ AnimeKai ⌟ | Server 1 | [Soft Sub] - 1080p
-        var displayName = ' AnimeKai ' | ' + serverLabel + ' | [' + typeLabel + '] - ' + quality;
+        var displayName = ' ⌜ AnimeKai ⌟ ' | ' + serverLabel + ' | [' + typeLabel + '] - ' + quality;
 
         links.push({
             name: displayName,
