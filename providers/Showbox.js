@@ -344,7 +344,7 @@ const getStreamsFromTmdbId = async (tmdbType, tmdbId, seasonNum = null, episodeN
 
         // Build API URL
         let apiUrl;
-        const oss = regionPreference || 'USA7'; // Default to USA7 if no region preference
+        const oss = regionPreference || 'USA5'; // Default to USA7 if no region preference
 
         if (tmdbType === 'tv' || tmdbType === 'series') {
             if (seasonNum === null || episodeNum === null) {
