@@ -7,6 +7,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // ShowBox API Configuration
 const SHOWBOX_API_BASE = 'https://febapi.nuvioapp.space/api/media';
+const SERVER_REGION = 'US5';
 
 // Working headers for ShowBox API
 const WORKING_HEADERS = {
@@ -46,7 +47,7 @@ function getOssGroup() {
     } catch (e) {
         // ignore and fall through
     }
-    return null; // OSS group is optional
+    return SERVER_REGION; // OSS group is optional
 }
 
 // Utility Functions
