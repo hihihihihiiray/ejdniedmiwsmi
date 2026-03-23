@@ -34,7 +34,7 @@
         "movie",
         "tv"
       ],
-      "filename": "providers/4khdhubtest.js",
+      "filename": "providers/4khdhub.js",
       "enabled": true,
       "formats": [
         "mkv"
