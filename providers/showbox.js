@@ -7,7 +7,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // ShowBox API Configuration
 const SHOWBOX_API_BASE = 'https://febapi.nuvioapp.space/api/media';
-const OSS_REGION = 'USA5'; // Change this to swap regions (e.g. 'USA7', 'IN1')
+const SHOWBOX_SERVER_REGION = 'USA5'; // Change this to swap regions (e.g. 'USA7', 'IN1')
 
 // Working headers for ShowBox API
 const WORKING_HEADERS = {
@@ -36,7 +36,7 @@ function getUiToken() {
 
 // OSS region — set OSS_REGION above to change it
 function getOssGroup() {
-    return OSS_REGION;
+    return SHOWBOX_SERVER_REGION;
 }
 
 // Utility Functions
