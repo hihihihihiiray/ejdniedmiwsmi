@@ -6,7 +6,7 @@ const TMDB_API_KEY = '1c29a5198ee1854bd5eb45dbe8d17d92';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // ShowBox API Configuration
-const SHOWBOX_API_BASE = 'https://febapi.nuvioapp.space/api/media'; = 'USA5'; // Change this to swap regions (e.g. 'USA7', 'UK1')
+const SHOWBOX_API_BASE = 'https://febapi.nuvioapp.space/api/media';
 
 // Working headers for ShowBox API
 const WORKING_HEADERS = {
@@ -33,7 +33,7 @@ function getUiToken() {
     return '';
 }
 
-// OSS Group is provided by the host app via per-scraper settings (Plugin Screen) - optional
+// OSS Group is provided by the host app via per-scraper settings (Plugin Screen)
 function getOssGroup() {
     try {
         // Prefer sandbox-injected globals
@@ -46,7 +46,7 @@ function getOssGroup() {
     } catch (e) {
         // ignore and fall through
     }
-    return ''; // OSS group is optional
+    return '';
 }
 
 // Utility Functions
@@ -272,7 +272,7 @@ function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = 
         return Promise.resolve([]);
     }
 
-    // Get OSS group - optional
+    // Get OSS group
     const ossGroup = getOssGroup();
     console.log(`[ShowBox] Using cookie: ${cookie.substring(0, 20)}...${ossGroup ? `, OSS Group: ${ossGroup}` : ' (no OSS group)'}`);
 
