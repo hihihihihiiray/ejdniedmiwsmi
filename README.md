@@ -63,3 +63,4 @@ Huge thanks to these people who have created these plugins:
 - **keyiflerolsun** (From MoOnCrOwN's Repo)
 - **Michat88**
 - **Nvmindl**
+- **Real-Morpheus**
