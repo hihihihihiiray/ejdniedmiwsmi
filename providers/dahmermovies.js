@@ -53,12 +53,6 @@ function getEpisodeSlug(season = null, episode = null) {
     return [seasonSlug, episodeSlug];
 }
 
-function getIndexQuality(str) {
-    if (!str) return Qualities.Unknown;
-    const match = str.match(/(\d{3,4})[pP]/);
-    return match ? parseInt(match[1]) : Qualities.Unknown;
-}
-
 function getQualityWithCodecs(str) {
     if (!str) return 'Unknown';
 
@@ -80,14 +74,6 @@ function getQualityWithCodecs(str) {
     }
 
     return baseQuality;
-}
-
-function encodeUrl(url) {
-    try {
-        return encodeURI(url);
-    } catch (e) {
-        return url;
-    }
 }
 
 function decode(input) {
@@ -194,14 +180,26 @@ function resolvePath(path, encodedUrl) {
         fullUrl = baseUrl + encodedPath;
     }
 
-    // Cleanup spaces and brackets for the direct link
     fullUrl = decodeURIComponent(fullUrl)
         .replace(/ /g, '%20')
         .replace(/\(/g, '%28')
         .replace(/\)/g, '%29');
 
-    // Attach the bulk proxy prefix
+    // Attach bulk proxy prefix
     const proxiedUrl = `https://p.111477.xyz/bulk?u=${fullUrl}`;
+
+    // Calculate raw bytes for sorting
+    const sizeBytes = (function(s) {
+        if (!s) return 0;
+        const match = s.match(/(\d+(?:\.\d+)?)\s*([GKMTe]B|Bytes?)/i);
+        if (match) {
+            const val = parseFloat(match[1]);
+            const unit = match[2].toUpperCase();
+            const pow = {'BYTES': 0, 'B': 0, 'KB': 1, 'MB': 2, 'GB': 3, 'TB': 4}[unit] || 0;
+            return val * Math.pow(1024, pow);
+        }
+        return parseInt(s) || 0;
+    })(path.size);
 
     return Promise.resolve({
         result: {
@@ -210,6 +208,7 @@ function resolvePath(path, encodedUrl) {
             url: proxiedUrl,
             quality: qualityWithCodecs,
             size: formatFileSize(path.size),
+            sizeBytes: sizeBytes, // Temporary for sorting
             type: "direct",
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15',
@@ -222,7 +221,6 @@ function resolvePath(path, encodedUrl) {
     });
 }
 
-// Main Dahmer Movies fetcher function
 async function invokeDahmerMovies(title, year, season = null, episode = null) {
     console.log(`[DahmerMovies] Searching for: ${title} (${year})${season ? ` Season ${season}` : ''}${episode ? ` Episode ${episode}` : ''}`);
 
@@ -251,10 +249,7 @@ async function invokeDahmerMovies(title, year, season = null, episode = null) {
         } catch (e) { continue; }
     }
 
-    if (!html) {
-        console.log('[DahmerMovies] No matching content found');
-        return [];
-    }
+    if (!html) return [];
 
     const paths = parseLinks(html);
     let filteredPaths;
@@ -289,7 +284,12 @@ async function invokeDahmerMovies(title, year, season = null, episode = null) {
             if (result) results.push(result);
         });
 
-        results.sort((a, b) => getIndexQuality(b.filename) - getIndexQuality(a.filename));
+        // ORDER BY SIZE: Smallest to Largest
+        results.sort((a, b) => (a.sizeBytes || 0) - (b.sizeBytes || 0));
+        
+        // Clean up temporary sorting property
+        results.forEach(r => delete r.sizeBytes);
+
         return results;
     } catch (error) {
         console.log(`[DahmerMovies] Error: ${error.message}`);
@@ -297,7 +297,6 @@ async function invokeDahmerMovies(title, year, season = null, episode = null) {
     }
 }
 
-// Main function to get streams for TMDB content
 function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = null) {
     const tmdbUrl = `https://api.themoviedb.org/3/${mediaType === 'tv' ? 'tv' : 'movie'}/${tmdbId}?api_key=${TMDB_API_KEY}`;
     return makeRequest(tmdbUrl).then(function (tmdbResponse) {
@@ -320,7 +319,6 @@ function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = 
     });
 }
 
-// Export the main function
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { getStreams };
 } else {
