@@ -200,7 +200,7 @@ function resolvePath(path, encodedUrl) {
         .replace(/\(/g, '%28')
         .replace(/\)/g, '%29');
 
-    // Attach the bulk proxy prefix as requested
+    // Attach the bulk proxy prefix
     const proxiedUrl = `https://p.111477.xyz/bulk?u=${fullUrl}`;
 
     return Promise.resolve({
