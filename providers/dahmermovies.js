@@ -226,16 +226,25 @@ function resolvePath(path, encodedUrl) {
 async function invokeDahmerMovies(title, year, season = null, episode = null) {
     console.log(`[DahmerMovies] Searching for: ${title} (${year})${season ? ` Season ${season}` : ''}${episode ? ` Episode ${episode}` : ''}`);
 
-    const titleVariations = [
-        title.replace(/:/g, '') + ' (' + year + ')',
-        title.replace(/:/g, '')
-    ];
+    // Remove colons from the title to prevent URL/search issues
+    const cleanTitle = title.replace(/:/g, '');
+
+    // Split movies & TV logic
+    const titleVariations = season === null
+        ? [
+            `${cleanTitle} (${year})`, // movies prefer year
+            cleanTitle
+          ]
+        : [
+            cleanTitle,                // TV prefers no year
+            `${cleanTitle} (${year})`  // fallback
+          ];
 
     let html = null;
     let encodedUrl = null;
 
     for (const variant of titleVariations) {
-        const safeVariant = variant.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
+        const safeVariant = encodeURIComponent(variant);
         const tvBaseUrl = `${DAHMER_MOVIES_API}/tvs/${safeVariant}/`;
         const tryUrl = season === null
             ? `${DAHMER_MOVIES_API}/movies/${safeVariant}/`
@@ -244,7 +253,7 @@ async function invokeDahmerMovies(title, year, season = null, episode = null) {
         try {
             const res = await makeRequest(tryUrl);
             const text = await res.text();
-            if (text && text.includes('<a')) {
+            if (text && text.length > 500 && text.includes('href')) {
                 html = text;
                 encodedUrl = tryUrl;
                 break;
