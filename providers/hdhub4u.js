@@ -609,7 +609,7 @@ function search(query) {
   return __async(this, null, function* () {
     const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     
-    // Updated URL structure matching your DevTools screenshot
+
     const searchUrl = `${SEARCH_DOMAIN}/collections/post/documents/search?q=${encodeURIComponent(query)}&query_by=post_title,category,stars,director,imdb_id&query_by_weights=4,2,2,2,4&sort_by=sort_by_date:desc&limit=15&highlight_fields=none&use_cache=true&page=1&analytics_tag=${today}`;
     
     const response = yield fetch(searchUrl, { 
