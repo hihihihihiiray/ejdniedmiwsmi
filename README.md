@@ -1,6 +1,6 @@
-# The Best Nuvio Plugins
+# Ray's Plugins
 
-A curated collection of the best high-quality scrapers compiled for the Nuvio streaming application. These plugins allow you to fetch premium streams from various sources directly within the app.
+A curated collection of the best high-quality plugins compiled for the Nuvio streaming application. These plugins allow you to fetch premium streams from various sources directly within the app.
 
 ## Installation
 
