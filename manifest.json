@@ -171,6 +171,19 @@
       "contentLanguage": ["en"]
     },
     {
+      "id": "nuvio-tokyoinsider",
+      "name": "TokyoInsider",
+      "description": "TokyoInsider streaming with high-quality links, sub or dub (~7s)",
+      "version": "1.0",
+      "author": "raymondnoodles",
+      "supportedTypes": ["movie", "tv", "anime"],
+      "filename": "providers/tokyoinsider.js",
+      "enabled": true,
+      "formats": ["mp4", "mkv"],
+      "logo": "https://www.google.com/s2/favicons?domain=tokyoinsider.com&sz=256",
+      "contentLanguage": ["en", "ja"]
+    },
+    {
       "id": "nuvio-uhdmovies",
       "name": "UHDMovies",
       "description": "UHDMovies streaming with multiple resolutions (~6s)",
