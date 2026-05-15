@@ -6,6 +6,7 @@ console.log('[TokyoInsider] Initializing TokyoInsider scraper');
 // Constants
 const TMDB_API_KEY = "1c29a5198ee1854bd5eb45dbe8d17d92";
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+const ANILIST_API_URL = 'https://graphql.anilist.co';
 const BASE_URL = 'https://www.tokyoinsider.com';
 const TIMEOUT = 20000;
 
@@ -50,17 +51,62 @@ function getTMDBDetails(tmdbId, mediaType) {
     });
 }
 
-// Format title
+// Get AniList details
+function getAniListDetails(title, year, mediaType) {
+    const query = `
+        query ($search: String, $year: Int, $type: MediaType) {
+            Media(search: $search, seasonYear: $year, type: $type) {
+                id
+                title {
+                    romaji
+                    english
+                    native
+                }
+            }
+        }
+    `;
+
+    const variables = {
+        search: title,
+        year: year ? parseInt(year) : null,
+        type: mediaType === 'tv' ? 'ANIME' : 'ANIME'
+    };
+
+    return fetch(ANILIST_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ query, variables })
+    }).then(function(response) {
+        return response.json();
+    }).then(function(data) {
+        if (data.data && data.data.Media) {
+            const titles = data.data.Media.title;
+            console.log(`[TokyoInsider] AniList found - Romanji: "${titles.romaji}", English: "${titles.english}"`);
+            return {
+                romaji: titles.romaji,
+                english: titles.english,
+                native: titles.native
+            };
+        }
+        return null;
+    }).catch(function(error) {
+        console.log(`[TokyoInsider] AniList lookup failed: ${error.message}`);
+        return null;
+    });
+}
+
+// Format title for URL
 function formatTitleForURL(title) {
-    // Replace spaces with underscores
-    // Keep special characters but encode them properly
     return title
         .trim()
         .replace(/ /g, '_')
-        .replace(/'/g, '')  // Remove apostrophes
-        .replace(/:/g, '')  // Remove colons
-        .replace(/\?/g, '')  // Remove question marks
-        .replace(/!/g, '');  // Remove exclamation marks
+        .replace(/'/g, '')
+        .replace(/:/g, '')
+        .replace(/\?/g, '')
+        .replace(/!/g, '');
 }
 
 // Build TokyoInsider URL
@@ -71,27 +117,27 @@ function buildTokyoInsiderURL(title, mediaType, episodeNum) {
 
     const baseAnimeUrl = `${BASE_URL}/anime/${firstLetter}/${formattedTitle}${typeDesignation}`;
 
-    if (episodeNum) {
+    if (mediaType === 'tv' && episodeNum) {
         return `${baseAnimeUrl}/episode/${episodeNum}`;
+    } else if (mediaType === 'movie') {
+        return `${baseAnimeUrl}/movie/1`;
     }
 
     return baseAnimeUrl;
 }
 
-// Extract download link and file size from episode page
-function extractDownloadInfo(episodePageUrl) {
-    console.log(`[TokyoInsider] Fetching episode page: ${episodePageUrl}`);
+// Extract download links from page
+function extractDownloadInfo(downloadPageUrl) {
+    console.log(`[TokyoInsider] Fetching page: ${downloadPageUrl}`);
 
-    return makeRequest(episodePageUrl).then(function(response) {
+    return makeRequest(downloadPageUrl).then(function(response) {
         return response.text();
     }).then(function(html) {
-        // Look for .mkv or .mp4 files in anchor tags
         const fileRegex = /<a[^>]+href=["']([^"']*\/download\/[^"']+)["'][^>]*>([^<]*?\.(?:mkv|mp4)[^<]*?)<\/a>/gi;
 
         let matches = [];
         let match;
 
-        // Collect all .mkv and .mp4 links
         while ((match = fileRegex.exec(html)) !== null) {
             matches.push({
                 url: match[1],
@@ -117,18 +163,15 @@ function extractDownloadInfo(episodePageUrl) {
         }
 
         if (matches.length === 0) {
-            console.log('[TokyoInsider] Could not find any .mkv or .mp4 files');
-            
+            throw new Error('No .mkv or .mp4 files found');
         }
 
         console.log(`[TokyoInsider] Found ${matches.length} file(s)`);
 
-        // Process
         const results = matches.map(function(fileMatch) {
             const downloadUrl = fileMatch.url.startsWith('http') ? fileMatch.url : BASE_URL + fileMatch.url;
             const filename = fileMatch.filename;
 
-            // Extract file size from the HTML (look near the filename)
             const filenameIndex = html.indexOf(filename);
             if (filenameIndex !== -1) {
                 const surroundingText = html.substring(filenameIndex, filenameIndex + 500);
@@ -136,7 +179,6 @@ function extractDownloadInfo(episodePageUrl) {
                                  surroundingText.match(/([0-9.]+\s*[KMGT]B)/i);
                 const fileSize = sizeMatch ? sizeMatch[1] : null;
 
-                // Extract quality from filename
                 const qualityMatch = filename.match(/(\d{3,4}p)/i);
                 const quality = qualityMatch ? qualityMatch[1] : 'Unknown';
 
@@ -148,7 +190,6 @@ function extractDownloadInfo(episodePageUrl) {
                 };
             }
 
-            // Fallback
             const qualityMatch = filename.match(/(\d{3,4}p)/i);
             return {
                 url: downloadUrl,
@@ -173,7 +214,7 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
     }
 
     try {
-        // Step 1: Get TMDB details
+        // Get TMDB details
         const mediaInfo = await getTMDBDetails(tmdbId, mediaType);
         if (!mediaInfo) {
             return [];
@@ -181,11 +222,46 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
 
         console.log(`[TokyoInsider] Title: "${mediaInfo.title}" (${mediaInfo.year})`);
 
-        // Try with both English title and original title
-        const titlesToTry = [mediaInfo.title];
-        if (mediaInfo.originalTitle && mediaInfo.originalTitle !== mediaInfo.title) {
+        // Get AniList details (for romanji title)
+        const anilistInfo = await getAniListDetails(mediaInfo.title, mediaInfo.year, mediaType);
+
+        // Build list of titles to try (English, Romanji, Original)
+        const titlesToTry = [];
+
+        if (anilistInfo && anilistInfo.romaji) {
+            titlesToTry.push(anilistInfo.romaji);
+        }
+
+        
+        if (
+            mediaInfo.title &&
+            (!anilistInfo || mediaInfo.title !== anilistInfo.romaji)
+        ) {
+            titlesToTry.push(mediaInfo.title);
+        }
+
+        
+        if (
+            anilistInfo &&
+            anilistInfo.english &&
+            anilistInfo.english !== mediaInfo.title &&
+            anilistInfo.english !== anilistInfo.romaji
+        ) {
+            titlesToTry.push(anilistInfo.english);
+        }
+
+        
+        if (
+            mediaInfo.originalTitle &&
+            mediaInfo.originalTitle !== mediaInfo.title &&
+            (!anilistInfo || mediaInfo.originalTitle !== anilistInfo.romaji)
+        ) {
             titlesToTry.push(mediaInfo.originalTitle);
         }
+
+        console.log(
+            `[TokyoInsider] Will try ${titlesToTry.length} title variation(s)`,
+        );
 
         let downloadInfoArray = null;
         let usedTitle = null;
@@ -194,19 +270,14 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
         for (const title of titlesToTry) {
             try {
                 console.log(`[TokyoInsider] Trying with title: "${title}"`);
-                // Always include episode number for TV shows
-                const episodeUrl = buildTokyoInsiderURL(
-                    title, 
-                    mediaInfo.mediaType, 
-                    mediaInfo.mediaType === 'tv' ? episodeNum : null
-                );
-                console.log(`[TokyoInsider] Episode URL: ${episodeUrl}`);
-                downloadInfoArray = await extractDownloadInfo(episodeUrl);
+                const downloadUrl = buildTokyoInsiderURL(title, mediaInfo.mediaType, episodeNum);
+                console.log(`[TokyoInsider] URL: ${downloadUrl}`);
+                downloadInfoArray = await extractDownloadInfo(downloadUrl);
                 usedTitle = title;
-                break; // Success, stop trying
+                break;
             } catch (error) {
                 console.log(`[TokyoInsider] Failed with title "${title}": ${error.message}`);
-                continue; // Try next title
+                continue;
             }
         }
 
@@ -215,11 +286,11 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
             return [];
         }
 
-        // Step 3: Build stream objects for files
+        // Step 4: Build stream objects
         const streams = downloadInfoArray.map(function(downloadInfo) {
             return {
                 name: `TokyoInsider${downloadInfo.quality !== 'Unknown' ? ' - ' + downloadInfo.quality : ''}`,
-                title: `${downloadInfo.filename}`,
+                title: `${downloadInfo.filename}${downloadInfo.size ? '\n' + downloadInfo.size : ''}`,
                 url: downloadInfo.url,
                 quality: downloadInfo.quality,
                 size: downloadInfo.size,
@@ -231,7 +302,7 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
             };
         });
 
-        console.log(`[TokyoInsider] Successfully extracted ${streams.length} stream(s)`);
+        console.log(`[TokyoInsider] Successfully extracted ${streams.length} stream(s) using title "${usedTitle}"`);
         return streams;
 
     } catch (error) {
@@ -240,8 +311,8 @@ async function invokeTokyoInsider(tmdbId, mediaType, seasonNum = null, episodeNu
     }
 }
 
-// Main function to get streams for TMDB content
-function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = 1) {
+// Main function to get streams
+function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = null) {
     console.log(`[TokyoInsider] Fetching streams for TMDB ID: ${tmdbId}, Type: ${mediaType}${seasonNum ? `, S${seasonNum}E${episodeNum}` : ''}`);
 
     return invokeTokyoInsider(tmdbId, mediaType, seasonNum, episodeNum).catch(function(error) {
@@ -250,7 +321,7 @@ function getStreams(tmdbId, mediaType = 'movie', seasonNum = null, episodeNum = 
     });
 }
 
-// Export the main function
+// Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { getStreams };
 } else {
